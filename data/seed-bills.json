@@ -1,0 +1,59 @@
+{
+  "bills": [
+    {
+      "id": "10-3355",
+      "number": "3355",
+      "term": 10,
+      "title": "Rządowy projekt ustawy o zmianie ustawy o przygotowaniu i realizacji inwestycji w zakresie obiektów energetyki jądrowej oraz inwestycji towarzyszących oraz niektórych innych ustaw.",
+      "date": "2026-11-13",
+      "sourceUrl": "https://www.sejm.gov.pl/sejm10.nsf/druk.xsp?nr=3355",
+      "pdfUrl": "https://api.sejm.gov.pl/sejm/term10/prints/3355/3355.pdf",
+      "status": "analyzed",
+      "summary": {
+        "lead": "Projekt ma usprawnić przygotowanie i budowę elektrowni jądrowych. Zmienia zasady dostępu do gruntów, dokumentacji i postępowań administracyjnych.",
+        "keyChanges": [
+          "Decyzje lokalizacyjne mają być bezterminowe. Inwestor uzyska określone prawa do gruntów bez zawierania osobnej umowy (art. 1 pkt 2 i 7).",
+          "Wybrana dokumentacja może być składana po angielsku, z możliwością żądania tłumaczenia przez PAA (art. 1 pkt 9).",
+          "W określonych postępowaniach o zezwolenia stroną ma być wyłącznie inwestor. Projekt zachowuje status części dotychczasowych uczestników (art. 1 pkt 9; art. 8).",
+          "PEJ ma bezpośrednio płacić podwykonawcom po spełnieniu warunków ustawowych; płatność nie obejmuje odsetek (art. 1 pkt 13).",
+          "Zmienia się rozłożenie limitów wsparcia PEJ w latach 2026–2030 (art. 1 pkt 12)."
+        ],
+        "affectedGroups": [
+          "Inwestorzy i podwykonawcy",
+          "Właściciele nieruchomości i organizacje społeczne",
+          "PAA i administracja"
+        ],
+        "effectiveDate": "Proponowane: 7 dni po ogłoszeniu. Projekt nie jest obowiązującą ustawą (art. 12).",
+        "caveats": "Skrót nie obejmuje wszystkich wyjątków i przepisów przejściowych. Szczegóły należy sprawdzić w PDF.",
+        "method": "Analiza przygotowana przez asystenta na podstawie źródłowego PDF, bez integracji z zewnętrznym API AI. Weryfikacja: 15.11.2026."
+      }
+    },
+    {
+      "id": "10-2693",
+      "number": "2693",
+      "term": 10,
+      "title": "Rządowy projekt ustawy o zmianie ustawy o świadczeniu usług drogą elektroniczną oraz niektórych innych ustaw.",
+      "date": "2026-06-17",
+      "sourceUrl": "https://www.sejm.gov.pl/sejm10.nsf/druk.xsp?nr=2693",
+      "pdfUrl": "https://api.sejm.gov.pl/sejm/term10/prints/2693/2693.pdf",
+      "status": "analyzed",
+      "summary": {
+        "lead": "Ustawa ma określać procedurę blokowania nielegalnych treści w internecie oraz przywracania treści usuniętych bezpodstawnie. Prezydent zawetował ją 13 listopada 2026 r.; opisane rozwiązania nie weszły na tej podstawie w życie.",
+        "keyChanges": [
+          "Wprowadza procedurę wydawania nakazów uniemożliwienia dostępu do nielegalnych treści internetowych.",
+          "Przewiduje uprawnienia Prezesa UKE i Przewodniczącego KRRiT do wydawania nakazów w zakresie ich właściwości.",
+          "Obejmuje także nakazy przywracania treści usuniętych bezpodstawnie.",
+          "Dla określonych spraw dotyczących propagowania totalitaryzmu i nawoływania do nienawiści przewiduje odrębny tryb sądowy."
+        ],
+        "affectedGroups": [
+          "Użytkownicy publikujący treści w internecie",
+          "Dostawcy usług internetowych i platform",
+          "Prezes UKE, Przewodniczący KRRiT i sądy"
+        ],
+        "effectiveDate": "Nie weszła w życie: 13 listopada 2026 r. Prezydent odmówił podpisania ustawy z 22 października 2026 r. i skierował ją do ponownego rozpatrzenia przez Sejm.",
+        "caveats": "Skrót opisuje główne rozwiązania ustawy po pracach parlamentarnych, powiązanej z drukiem 2693. PDF druku przedstawia pierwotny projekt. To odrębna regulacja od podpisanej ustawy związanej z drukiem 2694. Argumenty Prezydenta są przedstawione osobno w jego stanowisku.",
+        "method": "Streszczenie przygotowane przez asystenta na podstawie informacji Sejmu i Senatu oraz opisu zakresu ustawy w formalnym wniosku Prezydenta. Pełny PDF pierwotnego druku nie był dostępny podczas tej weryfikacji. Stan weryfikacji: 15.11.2026."
+      }
+    }
+  ]
+}

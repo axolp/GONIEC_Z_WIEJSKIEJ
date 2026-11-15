@@ -1,0 +1,13 @@
+backend/target/
+data/cache/
+data/pdfs/
+data/bills.json
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.aws/
+.agents/
+.codex/

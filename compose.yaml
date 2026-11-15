@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      DATA_DIR: /app/data/cache
+      SEED_PATH: /app/data/seed-bills.json
+      PRESIDENT_COMMENTS_PATH: /app/data/presidential-comments.json
+      BILL_VOTINGS_PATH: /app/data/bill-votings.json
+      SYNC_INTERVAL_MINUTES: "30"
+    volumes:
+      - sejm-cache:/app/data/cache
+      - ./data/seed-bills.json:/app/data/seed-bills.json:ro
+      - ./data/presidential-comments.json:/app/data/presidential-comments.json:ro
+      - ./data/bill-votings.json:/app/data/bill-votings.json:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sejm-cache:

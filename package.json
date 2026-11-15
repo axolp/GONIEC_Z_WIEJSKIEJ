@@ -1,0 +1,9 @@
+{
+  "name": "goniec-z-wiejskiej",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "test:frontend": "npm --prefix frontend test",
+    "test:backend": "mvn -f backend/pom.xml test"
+  }
+}

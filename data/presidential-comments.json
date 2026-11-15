@@ -1,0 +1,22 @@
+{
+  "sourceUrl": "https://www.prezydent.pl/prawo/ustawy-zawetowane",
+  "verifiedAt": "2026-11-15",
+  "mode": "snapshot",
+  "comments": [
+    {
+      "id": "president-2026-11-13-2693",
+      "billId": "10-2693",
+      "date": "2026-11-13",
+      "title": "Weto do nowelizacji ustawy o świadczeniu usług drogą elektroniczną",
+      "summary": "Prezydent odmówił podpisania ustawy uchwalonej 22 października 2026 r., powiązanej z drukiem 2693. W uzasadnieniu kwestionuje sposób administracyjnego blokowania treści internetowych.",
+      "arguments": [
+        "Zdaniem Prezydenta blokowanie treści przez organy administracji bez uprzedniego orzeczenia sądu zagraża wolności wypowiedzi.",
+        "Prezydent wskazuje na ryzyko nieproporcjonalnego blokowania całych domen oraz niewystarczającą ochronę wynikającą z późniejszej kontroli sądowej.",
+        "Według uzasadnienia należało wykazać, dlaczego istniejące narzędzia przeciw nielegalnym treściom są niewystarczające i dlaczego potrzebne są kolejne ograniczenia."
+      ],
+      "sourceUrl": "https://www.prezydent.pl/prawo/ustawy-zawetowane/prezydent-podpisal-szesc-ustaw-jedna-zawetowal,129977",
+      "documentUrl": "https://www.prezydent.pl/storage/file/core_files/2026/11/13/a821a0a649b55f3d82daf1f3957b6b65/Wniosek%20Prezydenta%20RP%20ws.%20nowelizacji%20ustawy%20o%20%C5%9Bwiadczeniu%20us%C5%82ug%20drog%C4%85%20elektroniczn%C4%85%20%5BPDF%20dost%C4%99pny%5D.pdf",
+      "method": "Skrót stanowiska Prezydenta przygotowany przez asystenta na podstawie komunikatu KPRP i formalnego uzasadnienia weta. Powiązanie z drukiem 2693 potwierdza dokument źródłowy."
+    }
+  ]
+}

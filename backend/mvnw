@@ -1,0 +1,10 @@
+#!/bin/sh
+# Offline launcher: uses installed Maven or an already unpacked Maven 3.9.9.
+# It intentionally does not download executables; see IMPLEMENTATION.md.
+set -eu
+if command -v mvn >/dev/null 2>&1; then exec mvn "$@"; fi
+if [ -n "${MAVEN_HOME:-}" ] && [ -x "$MAVEN_HOME/bin/mvn" ]; then exec "$MAVEN_HOME/bin/mvn" "$@"; fi
+wrapper_maven="${MAVEN_USER_HOME:-${HOME}/.m2}/wrapper/dists/apache-maven-3.9.9/bin/mvn"
+if [ -x "$wrapper_maven" ]; then exec "$wrapper_maven" "$@"; fi
+printf '%s\n' 'Maven unavailable. Install Maven 3.9.9 with Java 21, or set MAVEN_HOME. This offline launcher cannot bootstrap Maven.' >&2
+exit 127

@@ -1,0 +1,30 @@
+server:
+  port: ${PORT:8080}
+spring:
+  application:
+    name: goniec-z-wiejskiej
+  jackson:
+    default-property-inclusion: non_null
+  mvc:
+    problemdetails:
+      enabled: true
+sejm:
+  base-url: https://api.sejm.gov.pl/sejm/term10/prints
+  data-dir: ${DATA_DIR:../data/cache}
+  seed-path: ${SEED_PATH:../data/seed-bills.json}
+  interval-minutes: ${SYNC_INTERVAL_MINUTES:30}
+  startup-sync: ${STARTUP_SYNC:true}
+  connect-timeout-seconds: ${CONNECT_TIMEOUT_SECONDS:10}
+  request-timeout-seconds: ${REQUEST_TIMEOUT_SECONDS:60}
+  max-pdf-bytes: ${MAX_PDF_BYTES:26214400}
+  max-json-bytes: ${MAX_JSON_BYTES:20971520}
+  max-pages: ${MAX_PDF_PAGES:300}
+  max-text-chars: ${MAX_TEXT_CHARS:300000}
+  cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+president:
+  comments-path: ${PRESIDENT_COMMENTS_PATH:../data/presidential-comments.json}
+bill-votings:
+  path: ${BILL_VOTINGS_PATH:../data/bill-votings.json}
+  base-url: ${VOTINGS_BASE_URL:https://api.sejm.gov.pl/sejm/term10/votings}
+  refresh-minutes: ${VOTINGS_REFRESH_MINUTES:30}
+  retry-seconds: ${VOTINGS_RETRY_SECONDS:60}
