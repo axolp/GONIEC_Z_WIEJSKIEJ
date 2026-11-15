@@ -1,6 +1,8 @@
 package pl.simplysejm;
 
 import org.junit.jupiter.api.Test;
+import pl.simplysejm.bills.domain.ExtractiveSummarizer;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ExtractiveSummarizerTest {

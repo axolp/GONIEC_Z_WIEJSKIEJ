@@ -1,8 +1,11 @@
 package pl.simplysejm;
 
-import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.Test;
+import pl.simplysejm.votings.api.BillVotings;
+import pl.simplysejm.votings.domain.VotingValidation;
+
 import static org.assertj.core.api.Assertions.*;
 import static pl.simplysejm.VotingFixtures.*;
 

@@ -1,8 +1,11 @@
 package pl.simplysejm;
 
-import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.Test;
+import pl.simplysejm.bills.domain.PrintSelector;
+import pl.simplysejm.bills.port.PrintDocument;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PrintSelectorTest {

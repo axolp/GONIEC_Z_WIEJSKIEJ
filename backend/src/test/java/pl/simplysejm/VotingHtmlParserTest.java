@@ -1,12 +1,15 @@
 package pl.simplysejm;
 
-import org.junit.jupiter.api.Test;
 import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import pl.simplysejm.votings.api.BillVotings;
+import pl.simplysejm.votings.domain.VotingHtmlParser;
+
 import static org.assertj.core.api.Assertions.*;
 import static pl.simplysejm.HtmlVotingFixtures.*;
 
 class VotingHtmlParserTest {
-    final VotingHtmlParser parser = new VotingHtmlParser();
+    final VotingHtmlParser parser = new VotingHtmlParser(java.time.Clock.fixed(java.time.Instant.parse("2026-11-15T12:00:00Z"), java.time.ZoneOffset.UTC));
     @Test void readsHeaderMappedColumnsAndNumericDashesWithoutInventingMembers() throws Exception {
         var result = parser.parse(html(), mapping());
         assertThat(result.votes()).isEmpty();
@@ -14,7 +17,7 @@ class VotingHtmlParserTest {
         assertThat(result.clubResults().getFirst()).isEqualTo(new BillVotings.ClubResult("KlubTestowyA", 1, 1, 1, 0, 0, 0));
         assertThat(result.clubResults().getLast().notParticipating()).isEqualTo(1);
         assertThat(result.clubResultsSourceUrl()).isEqualTo(VotingHtmlParser.sourceUrl(10, 66, 103));
-        assertThat(result.clubResultsVerifiedAt()).isNotBlank();
+        assertThat(result.clubResultsVerifiedAt()).isEqualTo("2026-11-15T12:00:00Z");
         assertThat(result.notParticipating()).isEqualTo(1);
         assertThat(result.category()).isEqualTo("final");
     }

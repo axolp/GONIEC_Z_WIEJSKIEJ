@@ -2,8 +2,16 @@ package pl.simplysejm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import pl.simplysejm.votings.api.BillVotings;
 
 final class VotingFixtures {
+    static final String VOTING_JSON = """
+            {"term":10,"sitting":66,"votingNumber":103,"date":"2026-10-08T20:54:10",
+             "title":"Projekt ustawy","description":"Głosowanie nad całością","kind":"ELECTRONIC",
+             "yes":1,"no":0,"abstain":0,"notParticipating":null,"totalVoted":1,
+             "votes":[{"MP":1,"firstName":"Jan","lastName":"Kowalski","secondName":"Adam","club":"KO","vote":"YES"}]}
+            """;
+
     static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
     static BillVotings.Voting voting(String id, String category, Integer absent, List<BillVotings.Vote> votes) {
         int number = Integer.parseInt(id.substring(id.lastIndexOf('-') + 1));

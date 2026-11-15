@@ -1,97 +1,85 @@
 package pl.simplysejm;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.io.TempDir;
-import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
-import java.nio.file.*;
 import java.time.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.RejectedExecutionException;
+import org.junit.jupiter.api.*;
+import pl.simplysejm.bills.api.BillQuery;
+import pl.simplysejm.votings.api.BillVotings;
+import pl.simplysejm.votings.application.VotingService;
+import pl.simplysejm.votings.port.*;
+
 import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.*;
 import static pl.simplysejm.VotingFixtures.*;
 
 class VotingServiceTest {
-    @TempDir Path temp;
-    VotingService service;
-    final VotingClient client = mock(VotingClient.class);
-    final BillService bills = mock(BillService.class);
-    Path mappingFile() { return temp.resolve("bill-votings.json"); }
-    SejmProperties properties() {
-        return new SejmProperties("https://api.sejm.gov.pl/sejm/term10/prints", temp.resolve("cache"), temp.resolve("seed.json"),
-                30, false, 1, 1, 1024, 4096, 300, 300000, "http://localhost:5173");
+    final VotingMappingSource mappings = mock(VotingMappingSource.class);
+    final VotingRepository repository = mock(VotingRepository.class);
+    final VotingSource source = mock(VotingSource.class);
+    final BillQuery bills = mock(BillQuery.class);
+    final OrchestrationFixtures.MutableClock clock = new OrchestrationFixtures.MutableClock();
+    final OrchestrationFixtures.ManualExecutor executor = new OrchestrationFixtures.ManualExecutor();
+    final VotingMappingSource.Mapping mapping = new VotingMappingSource.Mapping(snapshot(), "a".repeat(64));
+    @BeforeEach void setup() throws Exception {
+        when(mappings.read()).thenReturn(new VotingMappingSource.View(Map.of("10-2693", mapping), null));
+        when(repository.read(anyString(), any())).thenReturn(Optional.empty()); when(source.fetch(any())).thenReturn(live());
     }
-    void write(BillVotings.Response snapshot) throws Exception { MAPPER.writeValue(mappingFile().toFile(), new BillVotings.File(List.of(snapshot))); }
-    void start() {
-        service = new VotingService(new VotingMappings(MAPPER, mappingFile().toString()), new VotingCache(MAPPER, properties()), client, bills, 30, 60);
+    VotingService service() { return new VotingService(mappings, repository, source, bills, 30, 60, clock, executor); }
+    @Test void deduplicatesQueuedRefreshAndExpiresExactlyAtTtl() throws Exception {
+        var service = service(); assertThat(service.get("10-2693").mode()).isEqualTo("snapshot");
+        service.get("10-2693"); assertThat(executor.tasks).hasSize(1); verifyNoInteractions(source);
+        executor.runNext(); assertThat(service.get("10-2693").stale()).isFalse();
+        clock.advance(Duration.ofMinutes(30).minusNanos(1)); service.get("10-2693"); assertThat(executor.tasks).isEmpty();
+        clock.advance(Duration.ofNanos(1)); assertThat(service.get("10-2693").stale()).isTrue();
+        assertThat(executor.tasks).hasSize(1); executor.runNext(); verify(source, times(2)).fetch(any());
     }
-    @AfterEach void stop() { if (service != null) service.close(); }
-    @Test void servesSnapshotImmediatelyRefreshesOnceAndPersistsLiveAcrossRestart() throws Exception {
-        write(snapshot());
-        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
-        when(client.fetch(any())).thenAnswer(call -> { entered.countDown(); if (!release.await(3, TimeUnit.SECONDS)) throw new IOException("test deadline"); return live(); });
-        start();
-        try {
-            var first = service.get("10-2693");
-            assertThat(first.mode()).isEqualTo("snapshot");
-            assertThat(first.stale()).isTrue();
-            assertThat(entered.await(1, TimeUnit.SECONDS)).isTrue();
-            assertThat(service.get("10-2693").votings().getFirst().votes()).isEmpty();
-            verify(client, times(1)).fetch(any());
-        } finally { release.countDown(); }
-        await().atMost(Duration.ofSeconds(3)).until(() -> service.get("10-2693").mode().equals("live"));
-        var live = service.get("10-2693");
-        assertThat(live.stale()).isFalse(); assertThat(live.error()).isNull();
-        assertThat(Instant.parse(live.verifiedAt())).isBeforeOrEqualTo(Instant.now());
-        service.close(); clearInvocations(client); start();
-        assertThat(service.get("10-2693").votings().getFirst().votes()).hasSize(1);
-        verifyNoInteractions(client);
+    @Test void failureRetriesExactlyAtBoundaryAndNeverPersistsFabricatedData() throws Exception {
+        when(source.fetch(any())).thenThrow(new IOException("offline")); var service = service();
+        service.get("10-2693"); executor.runNext();
+        assertThat(service.get("10-2693").error()).contains("offline");
+        assertThat(service.get("10-2693").mode()).isEqualTo("snapshot");
+        clock.advance(Duration.ofSeconds(60).minusNanos(1)); service.get("10-2693"); assertThat(executor.tasks).isEmpty();
+        clock.advance(Duration.ofNanos(1)); service.get("10-2693"); assertThat(executor.tasks).hasSize(1);
+        verify(repository, never()).save(any());
     }
-    @Test void failedNetworkReturnsHonestSnapshotAndDoesNotWriteCache() throws Exception {
-        write(snapshot()); when(client.fetch(any())).thenThrow(new IOException("timeout")); start();
-        service.get("10-2693");
-        await().atMost(Duration.ofSeconds(3)).until(() -> service.get("10-2693").error() != null);
-        var result = service.get("10-2693");
-        assertThat(result.mode()).isEqualTo("snapshot"); assertThat(result.stale()).isTrue();
-        assertThat(result.error()).contains("timeout"); assertThat(result.votings()).hasSize(1);
-        assertThat(Files.exists(properties().dataDir().resolve("votings/10-2693.json"))).isFalse();
+    @Test void rejectedExecutionResetsFlagAndRetriesAfterDelay() {
+        var rejected = new java.util.concurrent.atomic.AtomicInteger();
+        var service = new VotingService(mappings, repository, source, bills, 30, 60, clock, task -> {
+            rejected.incrementAndGet(); throw new RejectedExecutionException("full");
+        });
+        assertThat(service.get("10-2693").error()).contains("chwilowo"); service.get("10-2693");
+        assertThat(rejected.get()).isEqualTo(1); clock.advance(Duration.ofSeconds(60)); service.get("10-2693");
+        assertThat(rejected.get()).isEqualTo(2); verifyNoInteractions(source);
     }
-    @Test void staleDiskLiveSurvivesFailureAndFileIsNotDeleted() throws Exception {
-        write(snapshot());
-        var mappings = new VotingMappings(MAPPER, mappingFile().toString());
-        var mapping = mappings.read().bills().get("10-2693");
-        var response = new BillVotings.Response("10-2693", "2026-11-15T00:00:00Z", snapshot().sourceUrl(), "10-66-103", List.of(live()), "live", false, null);
-        var cache = new VotingCache(MAPPER, properties());
-        cache.save(new VotingCache.Cached(1, mapping.signature(), Instant.EPOCH, response));
-        Path path = properties().dataDir().resolve("votings/10-2693.json"); byte[] original = Files.readAllBytes(path);
-        when(client.fetch(any())).thenThrow(new IOException("offline")); start(); service.get("10-2693");
-        await().atMost(Duration.ofSeconds(3)).until(() -> service.get("10-2693").error() != null);
-        assertThat(service.get("10-2693").mode()).isEqualTo("live");
-        assertThat(service.get("10-2693").stale()).isTrue();
-        assertThat(Files.readAllBytes(path)).isEqualTo(original);
+    @Test void saveFailureKeepsPreviousLiveDataAndRetryUsesSameClock() throws Exception {
+        var response = new BillVotings.Response("10-2693", clock.instant().toString(), snapshot().sourceUrl(), snapshot().defaultVotingId(), List.of(live()), "live", false, null);
+        var cached = new VotingRepository.Cached(1, mapping.signature(), clock.instant().minus(Duration.ofHours(1)), response);
+        when(repository.read("10-2693", mapping.signature())).thenReturn(Optional.of(cached));
+        doThrow(new IOException("disk full")).when(repository).save(any()); var service = service();
+        service.get("10-2693"); executor.runNext(); var result = service.get("10-2693");
+        assertThat(result.mode()).isEqualTo("live"); assertThat(result.votings()).isEqualTo(response.votings());
+        assertThat(result.error()).contains("disk full"); assertThat(result.stale()).isTrue(); assertThat(executor.tasks).isEmpty();
     }
-    @Test void distinguishesKnownUnmappedUnknownAndUnavailableMappings() throws Exception {
-        MAPPER.writeValue(mappingFile().toFile(), new BillVotings.File(List.of()));
-        when(bills.bill("10-3355")).thenReturn(Optional.of(mock(Bill.class))); start();
-        assertThat(service.get("10-3355").votings()).isEmpty();
-        assertThat(service.get("10-3355").stale()).isFalse();
-        assertThatThrownBy(() -> service.get("10-999999")).isInstanceOfSatisfying(ResponseStatusException.class,
-                e -> assertThat(e.getStatusCode().value()).isEqualTo(404));
-        Files.delete(mappingFile());
-        assertThatThrownBy(() -> service.get("10-3355")).isInstanceOfSatisfying(ResponseStatusException.class,
-                e -> assertThat(e.getStatusCode().value()).isEqualTo(503));
+    @Test void replacedMappingPreventsOldBackgroundTaskFromSaving() throws Exception {
+        var service = service(); service.get("10-2693");
+        when(mappings.read()).thenReturn(new VotingMappingSource.View(Map.of("10-2693",
+                new VotingMappingSource.Mapping(snapshot(), "b".repeat(64))), null));
+        executor.runNext(); verify(repository, never()).save(any());
+        service.get("10-2693"); assertThat(executor.tasks).hasSize(1); executor.runNext();
+        verify(repository).save(argThat(c -> c.signature().equals("b".repeat(64))));
     }
-    @Test void invalidReplacementKeepsLastMappingAndCategoryDefaultAreEditorial() throws Exception {
-        var s = snapshot();
-        var mapped = new BillVotings.Response(s.billId(), s.verifiedAt(), s.sourceUrl(), "10-66-103", List.of(
-                voting("10-66-103", "final", null, List.of()), voting("10-66-104", "amendment", null, List.of())), "snapshot", false, null);
-        write(mapped); when(client.fetch(any())).thenThrow(new IOException("offline")); start();
-        service.get("10-2693"); Files.writeString(mappingFile(), "{invalid");
-        var result = service.get("10-2693");
-        assertThat(result.defaultVotingId()).isEqualTo("10-66-103");
-        assertThat(result.votings().getLast().category()).isEqualTo("amendment");
-        assertThat(result.error()).contains("powiązań"); assertThat(result.stale()).isTrue();
+    @Test void emptyVerifiedMappingNeverTouchesSourcesOrCache() {
+        var empty = new BillVotings.Response("10-2693", "2026-11-15", snapshot().sourceUrl(), null, List.of(), "snapshot", false, null);
+        when(mappings.read()).thenReturn(new VotingMappingSource.View(Map.of("10-2693", new VotingMappingSource.Mapping(empty, "empty")), null));
+        var result = service().get("10-2693"); assertThat(result.stale()).isFalse(); assertThat(result.votings()).isEmpty();
+        verifyNoInteractions(source, repository, bills); assertThat(executor.tasks).isEmpty();
+    }
+    @Test void invalidCachedMappingFallsBackAndRefreshes() throws Exception {
+        var invalid = new BillVotings.Response("10-2693", clock.instant().toString(), snapshot().sourceUrl(), null, List.of(), "live", false, null);
+        when(repository.read("10-2693", mapping.signature())).thenReturn(Optional.of(new VotingRepository.Cached(1, mapping.signature(), clock.instant(), invalid)));
+        var service = service(); assertThat(service.get("10-2693").error()).contains("Cache"); executor.runNext();
+        assertThat(service.get("10-2693").mode()).isEqualTo("live"); assertThat(service.get("10-2693").error()).isNull();
     }
 }

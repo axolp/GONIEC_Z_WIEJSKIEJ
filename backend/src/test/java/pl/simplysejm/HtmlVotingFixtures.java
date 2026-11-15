@@ -2,6 +2,7 @@ package pl.simplysejm;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import pl.simplysejm.votings.api.BillVotings;
 
 /** Synthetic HTML only: never use these numbers as real Sejm results. */
 final class HtmlVotingFixtures {

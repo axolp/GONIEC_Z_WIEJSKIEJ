@@ -8,7 +8,7 @@ W środowisku z Java 21 i Maven 3.9.x:
 
 ```sh
 cd backend
-./mvnw test
+./mvnw verify
 ./mvnw spring-boot:run
 ```
 
@@ -93,10 +93,59 @@ Dodano testy JUnit/AssertJ:
 
 Nie uruchomiono kompilacji ani testów JVM: w środowisku brak Java/Javac i Maven. Root potwierdził `./backend/mvnw test` zakończone kodem 127 z informacją o braku Maven. Brak Docker uniemożliwia weryfikację obrazu. Nie instalowano narzędzi ani nie podejmowano prób obejścia ograniczeń DNS shella.
 
-Wykonano statyczny przegląd kodu i literałów (w tym poprawiono Content-Disposition przez API Spring), sprawdzono XML pom.xml, YAML konfiguracji, kształt dostępnego seedu oraz składnię powłoki launchera. To nie jest równoważne kompilacji ani testom wykonawczym. Przed wdrożeniem należy wykonać `./mvnw test` i build Docker w środowisku z wymaganymi narzędziami. Backend nie został sprawdzony end-to-end z siecią z tego shella.
+Wykonano statyczny przegląd kodu i literałów (w tym poprawiono Content-Disposition przez API Spring), sprawdzono XML pom.xml, YAML konfiguracji, kształt dostępnego seedu oraz składnię powłoki launchera. To nie jest równoważne kompilacji ani testom wykonawczym. Przed wdrożeniem należy wykonać `./mvnw verify` i build Docker w środowisku z wymaganymi narzędziami. Backend nie został sprawdzony end-to-end z siecią z tego shella.
 
 ## Rebranding: Goniec z Wiejskiej
 
 Nazwa aplikacji Spring (widoczna również w logach): `goniec-z-wiejskiej`. Maven artifactId: `goniec-z-wiejskiej`, display name: `Goniec z Wiejskiej`, wynikowy JAR: `target/goniec-z-wiejskiej-1.0.0.jar`. Dockerfile i przykłady obrazu wskazują nową nazwę. Wspólny klient HTTP wysyła `User-Agent: goniec-z-wiejskiej/1.0`.
 
 Zachowano techniczny pakiet i groupId `pl.simplysejm`, endpointy, formaty i lokalizacje cache, mapowania oraz wszystkie istniejące ENV. Statycznie sprawdzono XML, zgodność nazwy JAR-a z Dockerfile, pakiety Java oraz równoważność konfiguracji YAML poza nazwą aplikacji. Nie dodawano testów dla samej zmiany nazw; testów JVM i obrazu nie uruchamiano z powodu znanego braku Java/Maven/Docker. Zmiany ograniczono do backendu, bez commitów.
+
+## Architektura modułowego monolitu
+
+`pl.simplysejm.Application` skanuje jeden kontekst Spring. `bootstrap` zawiera properties i konfigurację zegara, reguł oraz wykonawców. `web` zawiera CORS i wspólne mapowanie błędów. Moduły `bills`, `votings` i `president` udostępniają API przypadków użycia, a ich aplikacje korzystają z portów i konkretnych reguł domenowych.
+
+```mermaid
+flowchart LR
+    B[bootstrap: konfiguracja i lifecycle] --> A[application]
+    W[adapter/web] --> API[api: przypadki użycia i DTO]
+    A --> API
+    A --> D[domain: reguły i walidacja]
+    A --> P[port: źródła i repozytoria]
+    O[adapter/http,file,pdf] --> P
+    O --> I[infrastructure/http i files]
+    S[bills/adapter/scheduling] --> BS[bills/api/BillSync]
+    V[votings/application] --> BQ[bills/api/BillQuery]
+```
+
+Kontrolery ustaw zależą od `BillQuery` i `BillSync`; kontroler głosowań od `VotingQuery`; prezydenta od `PresidentialCommentsQuery`. Głosowania nie znają aplikacji ani adapterów ustaw. Prezydent nie zależy od ustaw ani głosowań. Kontrakty `Entry`, `Snapshot`, `Cached`, `Mapping`, `View` należą do portów; ich pola i format JSON cache pozostają zgodne z wersją 1. `Sha256` jest wspólnym konkretnym helperem.
+
+`PrintSource`, `BillRepository`, `PdfTextExtractor`, `VotingSource`, `VotingMappingSource`, `VotingRepository` i `PresidentialSnapshotSource` oddzielają I/O od orkiestracji. `BoundedHttpTransport` obsługuje byte fetch z Accept, limitem w trakcie strumieniowania i deadline całej odpowiedzi. Produkcyjny adapter JDK zachowuje connect timeout, brak przekierowań oraz anulowanie przy przerwaniu/timeout. Fallback HTML buduje wyłącznie oficjalny URL z potwierdzonej tożsamości i ogranicza body do `min(MAX_JSON_BYTES, 2 MiB)`.
+
+Usługi otrzymują `Clock` i `Executor` w konstruktorach. Konfiguracja posiada pojedynczy wykonawca ustaw oraz wykonawca głosowań z kolejką 100 i jawnym `shutdownNow` przy zamknięciu kontekstu. Startup i harmonogram należą do adaptera `BillSynchronization`, który wywołuje `BillSync`. `sejm.scheduling-enabled=false` wyłącza cały adapter (łącznie ze startupem); istniejące `STARTUP_SYNC` zachowuje znaczenie przy aktywnym adapterze. Parser HTML otrzymuje zegar; reguły nie odczytują zegara systemowego. Neutralny `UseCaseException.Kind` jest tłumaczony na HTTP dopiero w `ApiErrors`.
+
+## Dwa poziomy testów
+
+Z katalogu `backend/`, w środowisku z Java 21 i Maven:
+
+```sh
+mvn -B test       # Surefire: wyłącznie **/*Test.java
+mvn -B verify     # Surefire unity + Failsafe **/*IT.java
+# alternatywnie istniejący launcher offline:
+./mvnw -B test
+./mvnw -B verify
+```
+
+Oba pluginy mają `failIfNoTests=true`; wersje dziedziczą z parenta Spring Boot. Failsafe wykonuje `integration-test` i `verify`. Raporty: `target/surefire-reports/` oraz `target/failsafe-reports/`. Dockerfile wykonuje `mvn -B verify`, więc pakowanie obrazu obejmuje oba poziomy.
+
+Unity obejmują selekcję, streszczanie, walidację, parser HTML i orkiestrację. Ręczna kolejka oraz zmienny zegar pozwalają sprawdzać deduplikację, odrzucenie zadania, dokładne granice TTL/retry, błędy pobierania/zapisu, zachowanie poprzednich danych, zmianę mapowania przed zapisem i brak pobrań dla pustych powiązań. Nie uruchamiają Spring, serwerów HTTP, operacyjnego dysku ani wątków wykonawczych. Syntetyczny HTML jest wspólnym zasobem testowym, a fixture JSON i dane są poza klasami scenariuszy.
+
+Dotychczasowe scenariusze I/O przeniesiono do `SejmClientIT`, `VotingClientIT`, `CacheStoreIT`, `VotingServiceIT`, `VotingHtmlFallbackIT`, `VotingControllerIT` i `PresidentialCommentsIT`. Zachowano przypadki lokalnego HTTP (w tym zawieszone body), plików, uszkodzeń cache, restartu, prezydenta i serializacji kontrolera. Fallback HTML podmienia tylko port transportu, a klient/parser/usługa/cache są rzeczywiste. Żaden test nie wymaga internetu ani Dockera i nie dodano produkcyjnej konfiguracji dowolnego URL HTML.
+
+`BackendApplicationIT` uruchamia przez `@SpringBootTest(RANDOM_PORT)` rzeczywisty serwer Spring, pojedyncze implementacje wszystkich portów, advice, Jackson oraz cache w `@TempDir`. Lokalny serwer zwraca syntetyczne druki/PDF i głosowanie; test sprawdza seed → POST sync 202 → analizę/PDF/status, CORS, błędy i snapshot → live. Zamykanie kontekstu pozostaje zadaniem Spring TestContext; test nie zamyka go ręcznie ani nie uruchamia drugiej aplikacji.
+
+`BackendLifecycleIT` jest zwykłym testem JUnit, bez SpringExtension, `@SpringBootTest` i cache Spring TestContext. Sam uruchamia dwie rzeczywiste aplikacje przez `SpringApplicationBuilder` na losowych portach i tych samych plikach w `@TempDir`. Pierwsza pobiera wynik live z lokalnego API i zapisuje trwały cache głosowań. Test zatrzymuje źródło, zamyka pierwszy kontekst w try-with-resources, sprawdza shutdown obu wykonawców i czeka maksymalnie 5 sekund na ich zakończenie. Dopiero wtedy uruchamia drugi kontekst i sprawdza odtworzony wynik live bez działającego źródła. Oba konteksty są zamykane również przy błędzie asercji. W obu testach startup i scheduler są wyłączone; oczekiwanie ma deadline, bez arbitralnych sleep. Wspólne dane pochodzą z `VotingFixtures`, bez zależności między klasami scenariuszy.
+
+W bieżącym środowisku implementera `mvn -B test`, `mvn -B verify`, `java -version` i launcher offline nie mogą uruchomić JVM/builda z powodu braku Java/Maven. Nie instalowano narzędzi ani nie obchodzono ograniczeń sieci. Kontrola statyczna importów, widoczności API, kierunków zależności, konfiguracji builda i zachowania scenariuszy nie zastępuje kompilacji: przed scaleniem wymagane jest zielone `mvn -B verify` w środowisku z JDK 21 i zależnościami.
+
+Kontrola statyczna przed przekazaniem do review: 62 plików Java, 157 importów projektu; sprawdzono istnienie typów, zgodność pakietów ze ścieżkami, publiczną widoczność typów produkcyjnych oraz metody używane po przeniesieniu (`read`, `save`, `sourceUrl`, walidatory, `digest`, `close`, `shouldPreserve`). Nie znaleziono zależności application → adapter, głosowania → bills poza API ani prezydent → pozostałe moduły. XML POM jest poprawny składniowo. Konfiguracja YAML oraz kontrakty `Bill`/`BillVotings` są zgodne z baseline po pominięciu deklaracji pakietów/importów. Zachowano wszystkie 34 dotychczasowe nazwane scenariusze; suite ma 7 klas unit i 9 klas IT. Tymczasowe skrypty migracji usunięto. To są wyniki kontroli źródeł, nie wyniki kompilacji ani uruchomienia testów.
