@@ -12,7 +12,7 @@ test('verified veto is associated only with the confirmed parliamentary print', 
   assert.equal(relatedComments(feed, '9-2693').length, 0);
   assert.match(renderRelatedComments(feed, {...bill, id:'10-3355'}), /Brak informacji o stanowisku prezydenta/);
   assert.match(renderRelatedComments(feed, {...bill, id:'9-2693'}), /Brak informacji o stanowisku prezydenta/);
-  assert.match(renderRelatedComments(null, bill), /Brak informacji o stanowisku prezydenta/);
+  assert.match(renderRelatedComments(null, bill), /Nie udało się pobrać stanowisk/);
   assert.match(renderRelatedComments({comments:[]}, bill), /Brak informacji o stanowisku prezydenta/);
   assert.match(renderRelatedComments(feed, bill), /Stanowisko prezydenta/);
   const mixed = {...feed, comments:[...feed.comments, {...feed.comments[0], billId:'10-9999', title:'Inna ustawa'}]};
@@ -64,4 +64,17 @@ test('available nuclear-energy bill displays an explicit lack of presidential in
   assert.match(html, /<h3>Stanowisko prezydenta<\/h3>/);
   assert.match(html, /Brak informacji o stanowisku prezydenta/);
   assert.doesNotMatch(html, /president-card|WETO|nie zajął stanowiska/);
+});
+
+test('failed feed is distinct from verified absence and all detail states disclose snapshot limits',()=>{
+ for(const unavailable of [null,{error:true}]){
+  const html=renderRelatedComments(unavailable,bill);
+  assert.match(html,/role="alert"/);assert.match(html,/Nie udało się pobrać/);
+  assert.doesNotMatch(html,/Brak informacji o stanowisku/);
+ }
+ for(const current of [feed,{mode:'snapshot',comments:[]},{error:true}]){
+  const html=renderRelatedComments(current,bill);
+  assert.match(html,/nie pełny rejestr/);assert.match(html,/Synchronizacja projektów jej nie aktualizuje/);
+  assert.match(html,/Brak wpisu nie oznacza braku stanowiska/);
+ }
 });

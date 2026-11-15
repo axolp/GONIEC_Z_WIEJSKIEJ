@@ -6,13 +6,14 @@ const date = value => { if (!value) return 'Brak danych'; const d = new Date(val
 const safeUrl = value => { try { if (typeof value !== 'string' || !value.trim()) return ''; const u = new URL(value, location.origin); if (!['https:','http:'].includes(u.protocol) || u.username || u.password) return ''; if (u.origin === location.origin && !/^\/api\/bills\/[^/]+\/pdf$/.test(u.pathname)) return ''; return escape(u.href); } catch { return ''; } };
 const link = (url, label) => safeUrl(url) ? `<a class="source-link" href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span><span class="sr-only"> (otwiera nową kartę)</span></a>` : '';
 let bills = [], demo = false, detailRequest = 0, polling, presidentialFeed = null;
+let activeProject = '', returnLink = null, returnHref = '', returnLabel = '';
 async function loadPresidentialComments() {
   try {
     const feed = await api('/api/presidential-comments');
     if (feed.mode !== 'snapshot' || !Array.isArray(feed.comments)) throw new Error('Niepoprawne stanowiska Prezydenta.');
     presidentialFeed = feed;
   } catch {
-    presidentialFeed = null;
+    presidentialFeed = {error:true};
   }
 }
 async function api(path, options) { const r = await fetch(path, options); const data = await r.json(); if (!r.ok) throw new Error(data.error || data.detail || `Błąd serwera (${r.status}).`); return data; }
@@ -32,12 +33,11 @@ async function load() {
 async function status() {
   try {
     const s = await api('/api/status');
-    const wasDemo = demo; demo = s.demo === true;
-    $('sync-state').textContent = demo ? 'Tryb przykładowy — backend niedostępny' : s.syncing ? 'Trwa sprawdzanie nowych projektów…' : s.error ? `Błąd synchronizacji: ${s.error}` : 'Połączenie z backendem aktywne';
-    $('sync-state').classList.toggle('warning', demo || !!s.error);
+    const backendDemo = s.demo === true;
+    $('sync-state').textContent = backendDemo ? 'Tryb przykładowy — backend niedostępny' : s.syncing ? 'Trwa sprawdzanie nowych projektów…' : s.error ? `Błąd synchronizacji: ${s.error}` : 'Połączenie z backendem aktywne';
+    $('sync-state').classList.toggle('warning', backendDemo || !!s.error);
     $('last-checked').textContent = date(s.lastCheckedAt); $('last-success').textContent = date(s.lastSuccessAt);
     $('sync').disabled = !!s.syncing; $('sync').textContent = s.syncing ? 'Synchronizacja w toku…' : 'Sprawdź nowe projekty ↻';
-    if (wasDemo !== demo) render();
     if (s.syncing && !polling) polling = setInterval(async () => { const active = await status(); if (!active) { clearInterval(polling); polling = null; await load(); } }, 2000);
     return !!s.syncing;
   } catch (e) { $('sync-state').textContent = `Status niedostępny: ${e.message}`; return false; }
@@ -56,21 +56,41 @@ function setViewVisibility() {
   return match;
 }
 async function route() {
-  const token = ++detailRequest;
   const match = setViewVisibility();
-  if (!match) return;
+  const token = ++detailRequest;
+  if (!match) {
+    const leavingDetail = !!activeProject;
+    activeProject = '';
+    if (!leavingDetail) return;
+    const restored = returnLink?.isConnected ? returnLink : [...($('bills').querySelectorAll?.('a') || [])].find(a => a.getAttribute('href') === returnHref && a.textContent === returnLabel);
+    if (restored) restored.focus();
+    else $('listing').focus();
+    return;
+  }
+  activeProject = match[1];
   $('detail').innerHTML = '<p class="empty" role="status">Wczytywanie projektu…</p>';
   try {
     const b = await api(`/api/bills/${encodeURIComponent(decodeURIComponent(match[1]))}`);
     if (token !== detailRequest) return;
     const s = b.summary || {};
-    $('detail').innerHTML = `<a class="back" href="#listing">← Wszystkie projekty</a><div class="detail-meta">DRUK NR ${escape(b.number)} · ${escape(b.term)}. KADENCJA · ${escape(date(b.date))}</div>${badge(b)}<h2>${escape(b.title)}</h2><p class="detail-lead">${escape(s.lead || 'Ten projekt oczekuje na opracowanie.')}</p><div class="detail-layout"><div><section class="analysis"><h3><span>01</span> Co się zmieni?</h3>${items(s.keyChanges)}</section><section class="analysis"><h3><span>02</span> Kogo dotyczy projekt?</h3>${items(s.affectedGroups)}</section><section class="analysis"><h3><span>03</span> Kiedy zmiany wejdą w życie?</h3><p>${escape(s.effectiveDate || 'Brak informacji w opracowaniu.')}</p></section>${s.caveats ? `<section class="caveat"><h3>Na co zwrócić uwagę</h3><p>${escape(s.caveats)}</p></section>` : ''}${renderRelatedComments(presidentialFeed, b)}<section class="analysis bill-votings" aria-labelledby="votings-title"><h3 id="votings-title">Jak głosowali posłowie?</h3><div id="votings-content" aria-live="polite"></div></section>${b.textPreview ? `<details><summary>Fragment tekstu projektu</summary><p class="preview">${escape(b.textPreview)}</p></details>` : ''}</div><aside class="document-panel"><p class="eyebrow">SPRAWDŹ U ŹRÓDŁA</p><h3>Oficjalne dokumenty</h3><p>Opracowanie to punkt wyjścia. Pełną treść znajdziesz w dokumentach Sejmu.</p>${link(b.sourceUrl,'Karta projektu w Sejmie')}${link(b.pdfUrl,'Otwórz dokument PDF')}<hr><h3>Jak powstało opracowanie?</h3><p>${escape(s.method || 'Nie podano metody opracowania.')}</p>${demo ? '<p class="warning">Dane przykładowe. Nie są wynikiem aktualnej synchronizacji.</p>' : ''}</aside></div>`;
+    $('detail').innerHTML = `<a class="back" href="#listing">← Wszystkie projekty</a><div class="detail-meta">DRUK NR ${escape(b.number)} · ${escape(b.term)}. KADENCJA · ${escape(date(b.date))}</div>${badge(b)}<h2>${escape(b.title)}</h2><p class="detail-lead">${escape(s.lead || 'Ten projekt oczekuje na opracowanie.')}</p><div class="detail-layout"><div><section class="analysis"><h3><span>01</span> Co się zmieni?</h3>${items(s.keyChanges)}</section><section class="analysis"><h3><span>02</span> Kogo dotyczy projekt?</h3>${items(s.affectedGroups)}</section><section class="analysis"><h3><span>03</span> Kiedy zmiany wejdą w życie?</h3><p>${escape(s.effectiveDate || 'Brak informacji w opracowaniu.')}</p></section>${s.caveats ? `<section class="caveat"><h3>Na co zwrócić uwagę</h3><p>${escape(s.caveats)}</p></section>` : ''}${renderRelatedComments(presidentialFeed, b)}<section class="analysis bill-votings" aria-labelledby="votings-title"><h3 id="votings-title">Jak głosowali posłowie?</h3><div id="votings-content" aria-live="polite"></div></section>${b.textPreview ? `<details><summary>Fragment tekstu projektu</summary><p class="preview">${escape(b.textPreview)}</p></details>` : ''}</div><aside class="document-panel"><p class="eyebrow">SPRAWDŹ U ŹRÓDŁA</p><h3>Oficjalne dokumenty</h3><p>Opracowanie to punkt wyjścia. Pełną treść znajdziesz w dokumentach Sejmu.</p>${link(b.sourceUrl,'Karta projektu w Sejmie')}${link(b.pdfUrl,'Otwórz dokument PDF')}<hr><h3>Jak powstało opracowanie?</h3><p>${escape(s.method || 'Nie podano metody opracowania.')}</p>${b.demo === true ? '<p class="warning">Dane przykładowe. Nie są wynikiem aktualnej synchronizacji.</p>' : ''}</aside></div>`;
     $('detail').focus();
     await loadBillVotings({billId:b.id, container:$('votings-content'), fetchData:api, isCurrent:() => token === detailRequest});
   } catch(e) { if (token === detailRequest) $('detail').innerHTML = `<a class="back" href="#listing">← Wszystkie projekty</a><div class="empty"><h2>Nie udało się otworzyć projektu</h2><p>${escape(e.message)}</p></div>`; }
 }
+$('bills').addEventListener('click', event => { const anchor = event.target.closest?.('a[href^="#projekt/"]'); if (anchor) { returnLink = anchor; returnHref = anchor.getAttribute('href'); returnLabel = anchor.textContent; } });
 $('search').addEventListener('input',render); $('filter').addEventListener('change',render);
 for (const [id, list] of [['cards-view',false],['list-view',true]]) $(id).onclick = () => { $('bills').classList.toggle('list',list); $('cards-view').setAttribute('aria-pressed',String(!list)); $('list-view').setAttribute('aria-pressed',String(list)); };
+// Section links scroll within the current page without changing the project route.
+document.addEventListener?.('click', event => {
+  const anchor = event.target.closest?.('a');
+  const hash = anchor?.getAttribute('href');
+  if (activeProject && ['#main','#about'].includes(hash)) {
+    event.preventDefault();
+    const target = $(hash.slice(1));
+    target.scrollIntoView(); target.focus({preventScroll:true});
+  }
+});
 window.addEventListener('hashchange',route);
 setViewVisibility();
 await Promise.all([load(),status(),loadPresidentialComments()]); await route();

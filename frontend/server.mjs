@@ -7,10 +7,18 @@ const types = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charse
 export function createServer({ backend = process.env.BACKEND_URL || 'http://localhost:8080', seedPath = path.resolve(root, '../data/seed-bills.json'), presidentialPath = path.resolve(root, '../data/presidential-comments.json'), votingsPath = path.resolve(root, '../data/bill-votings.json'), timeout = 4000 } = {}) {
   return http.createServer(async (req, res) => {
     const send = (code, data) => { res.writeHead(code, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}); res.end(JSON.stringify(data)); };
-    const url = new URL(req.url, 'http://localhost');
+    // Only origin-form request targets are accepted, before URL normalization or fallback.
+    let url;
+    try {
+      if (typeof req.url !== 'string' || !req.url.startsWith('/') || req.url.startsWith('//') || /[\\\x00-\x20#]/.test(req.url) || /%5c|%2f/i.test(req.url.split('?')[0])) throw new Error('Invalid target');
+      url = new URL(req.url, 'http://localhost');
+      if (url.origin !== 'http://localhost') throw new Error('Invalid origin');
+    } catch { return send(400, {error:'Niepoprawny adres żądania.'}); }
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
       try {
-        const upstream = new URL(req.url, backend);
+        const upstream = new URL(backend);
+        upstream.pathname = url.pathname; upstream.search = url.search; upstream.hash = '';
+        if (upstream.origin !== new URL(backend).origin) return send(400, {error:'Niepoprawny adres żądania.'});
         const headers = { ...req.headers }; delete headers.host; delete headers.connection;
         const response = await fetch(upstream, {method:req.method, headers, ...(req.method !== 'GET' && req.method !== 'HEAD' ? {body:req, duplex:'half'} : {}), signal:AbortSignal.timeout(timeout), redirect:'manual'});
         const body = Buffer.from(await response.arrayBuffer());
@@ -53,7 +61,7 @@ export function createServer({ backend = process.env.BACKEND_URL || 'http://loca
             res.setHeader('X-Simply-Sejm-Mode','demo');
             if (url.pathname === '/api/bills') return send(200,{bills,demo:true});
             const bill = bills.find(b => String(b.id) === decodeURIComponent(url.pathname.slice('/api/bills/'.length)));
-            return bill ? send(200,bill) : send(404,{error:'Nie znaleziono projektu.'});
+            return bill ? send(200,{...bill,demo:true}) : send(404,{error:'Nie znaleziono projektu.'});
           } catch { return send(503,{error:'Backend niedostępny. Brak poprawnego pliku data/seed-bills.json z danymi przykładowymi.'}); }
         }
         return send(404,{error:'Nie znaleziono endpointu.'});

@@ -1,61 +1,88 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 550" role="img" aria-labelledby="title desc">
-<title id="title">Goniec z Wiejskiej</title><desc id="desc">Autorska winieta w stylu linorytu: chłopiec w kaszkiecie z gazetą i torbą pełną prasy prowadzi rower polną drogą. W tle pola, zabudowania i słońce.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560" role="img" aria-labelledby="title desc">
+<title id="title">Goniec z Wiejskiej — przy furtce</title>
+<desc id="desc">Chłopak w kaszkiecie podaje gazetę mieszkańcowi stojącemu przy drewnianej furtce. Rower z torbą czeka przy drodze. Za płotem dom, sad i pasy pól.</desc>
 <defs>
- <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(24)"><path d="M0 0V7" stroke="#f5efdf" stroke-width="2"/></pattern>
- <pattern id="field" width="14" height="10" patternUnits="userSpaceOnUse"><path d="M0 9L14 2" stroke="#2b493a" stroke-width="1" opacity=".45"/></pattern>
- <clipPath id="oval"><path d="M65 340C20 228 53 80 191 43 340 2 466 100 467 242L458 359Z"/></clipPath>
+ <pattern id="cut" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><path d="M2 0v8M8 5v7" stroke="#FCF8ED" stroke-width="1.4"/></pattern>
+ <pattern id="field" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 17L18 1" stroke="#24372E" stroke-width="1.5" fill="none"/></pattern>
+ <pattern id="roof" width="14" height="12" patternUnits="userSpaceOnUse"><path d="M0 10h10M4 4h10" stroke="#FCF8ED" stroke-width="1.3"/></pattern>
 </defs>
-<!-- An irregular engraved landscape, kept to three printing inks. -->
-<g clip-path="url(#oval)">
- <path d="M30 25H490V375H30Z" fill="#e8e5d0"/>
- <circle cx="368" cy="120" r="48" fill="#ad5037"/>
- <path d="M327 97L408 91M321 109L414 103M320 122L417 116M323 135L415 129M329 148L408 142" stroke="#f5efdf" stroke-width="3"/>
- <path d="M23 252Q136 194 247 232T498 211V382H23Z" fill="#a9b497"/>
- <path d="M20 285Q154 205 312 271T503 250V390H20Z" fill="url(#field)"/>
- <path d="M30 301Q174 254 300 293M27 319Q173 272 289 310M28 337Q171 292 277 328" fill="none" stroke="#2b493a" stroke-width="2"/>
- <g fill="#2b493a"><path d="M76 239V202L112 173 148 202V233Z"/><path d="M103 181V164H112V178Z"/><path d="M401 232V183L419 161 438 184V239Z"/><path d="M416 163V140H421V163Z"/><path d="M391 237V211L408 196 425 212V243Z"/></g>
- <path d="M88 207H102V222H88ZM120 206H133V220H120ZM414 187H423V204H414Z" fill="#e8e5d0"/>
- <path d="M432 264Q444 215 465 192M443 237L429 220M449 221L468 216M457 205L447 193" stroke="#2b493a" stroke-width="4" fill="none"/>
+<!-- Uneven contours and carved highlights evoke a two-colour village linocut. -->
+<path d="M29 269Q18 136 116 76Q240 10 382 44Q564 24 659 146L693 380Q614 469 443 484L91 472Z" fill="#FCF8ED"/>
+<g fill="none" stroke="#24372E" stroke-linecap="round">
+ <path d="M43 277Q133 222 226 255Q341 197 432 235Q534 213 668 259M42 291Q130 251 222 269M55 308Q141 271 216 285M59 328Q139 289 215 303M67 348Q133 314 207 322" stroke-width="2"/>
+ <path d="M346 267Q476 237 671 279M370 280Q509 255 674 295M393 297Q526 275 679 316M416 313Q550 300 680 337" stroke-width="2"/>
+ <path d="M62 207l23-6 20 4M159 103l17-7 15 5M319 88l20-7 20 9" stroke-width="3"/>
 </g>
-<!-- Road and bicycle: deliberate open inkwork and imperfect double rims. -->
-<path d="M292 284C257 360 302 436 458 503M279 287C228 367 243 453 278 520" fill="none" stroke="#c5bca4" stroke-width="3"/>
-<ellipse cx="264" cy="476" rx="212" ry="19" fill="#2b493a" opacity=".10"/>
-<g stroke="#243d32" fill="none" stroke-linecap="round" stroke-linejoin="round">
- <g stroke-width="7"><circle cx="128" cy="397" r="73"/><circle cx="390" cy="397" r="73"/></g>
- <g stroke-width="1.5" opacity=".7"><circle cx="128" cy="397" r="65"/><circle cx="390" cy="397" r="65"/>
- <path d="M128 332V462M63 397H193M82 351L174 443M82 443L174 351M390 332V462M325 397H455M344 351L436 443M344 443L436 351"/></g>
- <path d="M128 397L204 294 265 397H128L232 326H360L265 397M390 397L350 284 342 258 368 249" stroke-width="7"/>
- <path d="M198 281H231M216 284L232 326M347 261L330 260M265 397L284 414H300" stroke-width="6"/>
- <circle cx="265" cy="397" r="14" stroke-width="4"/>
- <path d="M57 373Q123 302 188 366M331 349Q389 301 447 351M75 316H156L176 339M91 316V335M150 318L168 339" stroke-width="3"/>
+<!-- Farmhouse, distant village and orchard. -->
+<g stroke="#24372E" stroke-width="3" stroke-linejoin="round">
+ <path d="M433 183V116l87-62 96 62v108Z" fill="#F5EFDF"/>
+ <path d="M411 120L519 39l118 79-23 12-95-67-89 67Z" fill="#A6442F"/>
+ <path d="M411 120L519 39l118 79-23 12-95-67-89 67Z" fill="url(#roof)" stroke="none"/>
+ <path d="M563 68V41h20v43" fill="#A6442F"/>
+ <path d="M457 128h31v37h-31zM547 128h35v38h-35z" fill="#24372E"/>
+ <path d="M472 130v32M549 146h29" stroke="#FCF8ED" stroke-width="2"/>
+ <path d="M504 177v-54h27v70M445 179l159 24M444 191l156 23" fill="none"/>
+ <path d="M82 234v-51l40-24 40 29v53M70 185l51-39 53 42M105 235v-29h20v30M185 229v-32l24-17 25 19v32M176 200l33-29 33 30" fill="#F5EFDF"/>
+ <path d="M137 194h12v15h-12z" fill="#24372E"/>
 </g>
-<!-- Walking courier: cap, engraved jacket, folded newspaper and satchel. -->
-<path d="M234 317L224 379 195 445 218 454 254 390 273 342 284 394 318 446 337 434 306 375 300 316Z" fill="#243d32"/>
-<path d="M245 342L235 383 208 438M285 341L295 380 325 431" fill="none" stroke="#f5efdf" stroke-width="3"/>
-<path d="M194 441L216 447 219 461 174 463Q169 455 194 441ZM318 440L333 431 347 450Q350 459 338 457L310 451Z" fill="#243d32"/>
-<path d="M177 460H215M317 450L341 454" stroke="#f5efdf" stroke-width="2"/>
-<path d="M239 186Q213 187 207 212L196 265 214 279 234 241 233 320Q270 338 308 318L299 224 328 265 349 259 316 205Q307 186 283 183Z" fill="#2b493a" stroke="#243d32" stroke-width="3"/>
-<path d="M244 207L241 311M285 207L296 311M250 317L294 320M215 213L205 260M304 212L330 253" stroke="#f5efdf" stroke-width="2.5" fill="none"/>
-<path d="M246 195L261 214 277 192M262 215L267 291" stroke="#f5efdf" stroke-width="3" fill="none"/>
-<path d="M244 132L291 136 292 158 300 168 290 174 284 195Q260 202 246 179L239 151Z" fill="#e4c49d" stroke="#243d32" stroke-width="3"/>
-<path d="M242 144L253 147 251 163 244 161M253 177Q263 190 279 184" fill="none" stroke="#243d32" stroke-width="3"/>
-<path d="M279 154L286 155M281 176L289 175" stroke="#243d32" stroke-width="3"/>
-<path d="M231 139Q223 121 242 108 275 83 300 119L312 137 284 145 247 141Z" fill="#243d32"/>
-<path d="M236 127Q263 110 294 123M249 111L246 128M272 106L278 124" fill="none" stroke="#f5efdf" stroke-width="2"/>
-<path d="M239 139Q280 132 310 137L294 146 250 145Z" fill="#ad5037" stroke="#243d32" stroke-width="2"/>
-<!-- Raised newspaper, its masthead and columns are drawn rather than typeset. -->
-<g transform="rotate(-16 186 209)"><path d="M142 161L207 166 218 242 150 238Z" fill="#f5efdf" stroke="#243d32" stroke-width="3"/><path d="M150 170L198 174 199 186 152 182Z" fill="#243d32"/><path d="M155 191L174 193 176 218 158 217ZM183 195L203 197M183 202L204 204M184 209L205 211M185 216L207 218M160 226L208 230" fill="none" stroke="#243d32" stroke-width="2"/></g>
-<path d="M209 235L199 224 190 225 187 235 199 249 214 249" fill="#e4c49d" stroke="#243d32" stroke-width="3"/>
-<path d="M334 254L350 250 359 259 353 267 338 269" fill="#e4c49d" stroke="#243d32" stroke-width="3"/>
-<path d="M236 194L298 282" stroke="#ad5037" stroke-width="12"/>
-<path d="M235 194L297 280" stroke="#f5efdf" stroke-width="2"/>
-<path d="M271 272L318 259 340 323Q313 348 278 334Z" fill="#ad5037" stroke="#243d32" stroke-width="3"/>
-<path d="M279 278L310 270 322 295 288 305Z" fill="#f5efdf" stroke="#243d32" stroke-width="2"/>
-<path d="M286 280L306 276M288 286L310 282M291 292L312 288" stroke="#243d32" stroke-width="2"/>
-<path d="M278 306Q307 312 330 296L334 320Q310 337 285 328Z" fill="#ad5037" stroke="#243d32" stroke-width="2"/>
-<path d="M287 315L292 328M301 313L306 332M315 308L321 326" stroke="#e4c49d" stroke-width="2"/>
-<!-- Field margin: hand-cut grass, ears of grain and the courier's motion marks. -->
-<g fill="none" stroke="#2b493a" stroke-linecap="round"><path d="M53 493L42 439M48 473L31 462M46 462L59 449M42 449L30 439M468 495L482 438M474 471L490 461M477 458L467 445M483 440L495 430M91 493L82 477M91 493L101 472M436 489L426 472M436 489L448 470" stroke-width="3"/><path d="M38 433L43 438 47 427M483 429L482 438 475 430M48 409L29 414M42 397L20 399M48 385L31 383" stroke-width="2"/></g>
-<path d="M133 505Q255 520 395 505" stroke="#243d32" stroke-width="2" fill="none"/>
-<g fill="#ad5037"><circle cx="112" cy="493" r="3"/><circle cx="412" cy="500" r="3"/><path d="M257 43L260 35 263 43 271 46 263 49 260 57 257 49 249 46Z"/></g>
+<g stroke="#24372E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M331 245l-5-83m2 43-23-24m22 9 25-28M643 257l-3-80m2 36-24-20m23 6 19-23" fill="none"/>
+ <path d="M292 175q-30-24-9-47-6-29 24-33 14-32 39-10 30-8 40 19 27 18 7 41 2 29-29 32-21 20-39 0-22 13-33-2Z" fill="#24372E"/>
+ <path d="M602 189q-23-22-7-42-5-24 21-31 16-22 34-6 31-6 35 21 19 21-1 37 0 28-29 28-17 13-32-3-11 9-21-4Z" fill="#24372E"/>
+ <path d="M292 175q-30-24-9-47-6-29 24-33 14-32 39-10 30-8 40 19 27 18 7 41 2 29-29 32-21 20-39 0-22 13-33-2ZM602 189q-23-22-7-42-5-24 21-31 16-22 34-6 31-6 35 21 19 21-1 37 0 28-29 28-17 13-32-3-11 9-21-4Z" fill="url(#cut)" stroke="none"/>
+</g>
+<g fill="#A6442F"><circle cx="306" cy="122" r="6"/><circle cx="354" cy="139" r="6"/><circle cx="330" cy="101" r="6"/><circle cx="616" cy="150" r="6"/><circle cx="662" cy="136" r="6"/><circle cx="650" cy="174" r="6"/></g>
+<!-- Gate and fence; the open space between people is the handover. -->
+<g fill="#F5EFDF" stroke="#24372E" stroke-width="4" stroke-linejoin="round">
+ <path d="M426 388l235-30v17l-235 30zM425 433l236-28v16l-235 29z"/>
+ <path d="M434 347l10-15 10 13v127l-20 3zM480 340l10-16 10 14v127l-20 3zM531 334l10-15 10 13v127l-20 3zM584 327l10-15 10 14v127l-20 3zM638 320l10-15 10 13v127l-20 3z"/>
+ <path d="M424 398l237 25" fill="none" stroke-width="7"/>
+</g>
+<!-- Resident behind the gate, arm reaching to accept the newspaper. -->
+<g stroke="#24372E" stroke-width="3" stroke-linejoin="round">
+ <path d="M478 208q-18 19-8 46l17 14 25-9 12-25-12-27Z" fill="#F5EFDF"/>
+ <path d="M465 221q-6-32 25-37 34-2 38 32l-16-5-13-12-14 16Z" fill="#24372E"/>
+ <path d="M470 235l-8 4 10 7M487 246q9 5 16-1M488 229h3" fill="none"/>
+ <path d="M484 263l-28 18-15 73 91-8-7-66-18-18-10 24Z" fill="#A6442F"/>
+ <path d="M484 263l-28 18-15 73 91-8-7-66-18-18-10 24Z" fill="url(#cut)" stroke="none"/>
+ <path d="M457 284l-35 25-32-7-6 16 42 12 46-21" fill="#F5EFDF"/>
+ <path d="M457 284l-26 17 13 22 29-14" fill="#A6442F"/>
+ <path d="M512 283l18 42-15 28-14-6 11-26-13-25" fill="#A6442F"/>
+</g>
+<!-- Bicycle leans beside the courier. -->
+<g fill="none" stroke="#24372E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+ <circle cx="140" cy="437" r="57"/><circle cx="306" cy="437" r="57"/>
+ <circle cx="140" cy="437" r="49" stroke-width="1.5"/><circle cx="306" cy="437" r="49" stroke-width="1.5"/>
+ <path d="M140 437l51-85 44 85H140l66-63 100 63-36-107h-20M191 352h76M183 343h32M235 437l-4 17h16M139 437l-8-48M140 437l37 37M140 437l-48 12M306 437l-38 36M306 437l45 19M306 437l18-45M82 420q10-49 61-49M259 390q47-28 89 13"/>
+</g>
+<!-- Courier: cap, satchel, carved jacket and a paper extended into the resident's hand. -->
+<g stroke="#24372E" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+ <path d="M248 340l-10 68 22 49 19-7-14-48 22-58M278 344l16 58-5 59 21 1 14-65-10-64" fill="#24372E"/>
+ <path d="M250 361l-2 43 15 32M296 363l15 35-10 43" fill="none" stroke="#FCF8ED" stroke-width="2"/>
+ <path d="M259 449l-6 18q5 15 39 7l-4-9-13-13M290 454l-5 16q5 12 39 5l-2-8-15-10" fill="#24372E"/>
+ <path d="M257 236l-19 22-8 79q38 23 86 1l-8-83-29-19Z" fill="#24372E"/>
+ <path d="M257 236l-19 22-8 79q38 23 86 1l-8-83-29-19Z" fill="url(#cut)" stroke="none"/>
+ <path d="M257 235l13 19 15-19M269 256l4 80" fill="none" stroke="#FCF8ED" stroke-width="2"/>
+ <path d="M253 184q-8 15-4 35l17 20 19-8 9-20-4-24Z" fill="#F5EFDF"/>
+ <path d="M286 202l12 8-10 6M277 219l9-1M279 201h2" fill="none"/>
+ <path d="M239 187q-7-29 25-35 29-3 32 22l-22 12-29 12Z" fill="#24372E"/>
+ <path d="M241 186l57-13 8 7-54 19Z" fill="#A6442F"/>
+ <path d="M251 162l-5 14M264 159l-3 14M278 160l-2 10" stroke="#FCF8ED" stroke-width="2"/>
+ <path d="M304 255l29 22 36 8-5 18-43-9-35-20" fill="#F5EFDF"/>
+ <path d="M303 253l27 22-13 23-31-23" fill="#24372E"/>
+ <!-- Newspaper contains graphic rules only, never source text. -->
+ <path d="M350 268l49 10-11 48-48-12Z" fill="#FCF8ED"/>
+ <path d="M358 280l31 6M355 289l15 3M353 296l15 3M351 303l15 3M377 294l9 2-3 13-9-2Z" fill="none" stroke-width="2"/>
+ <path d="M359 284l10 3 4 8-11 4M392 303l-7 3-2 11 9 3" fill="#F5EFDF"/>
+ <path d="M244 261l-17 33 14 28 13-8-8-21 14-21" fill="#24372E"/>
+ <path d="M288 247l-39 78" fill="none" stroke="#A6442F" stroke-width="9"/>
+ <path d="M225 309l40 10-7 45-43-13Z" fill="#A6442F"/>
+ <path d="M225 309l40 10-11 16-36-8Z" fill="#F5EFDF"/>
+ <path d="M227 315l29 6M224 321l18 4" stroke-width="2"/>
+</g>
+<!-- Cut marks in the lane and grasses around the orchard gate. -->
+<g fill="none" stroke="#24372E" stroke-width="2" stroke-linecap="round">
+ <path d="M50 503q174 33 349-4M74 516q177 30 315-5M372 470l48-7M383 485l64-9M412 499l92-18M469 501l106-25M530 497l103-25M579 497l78-18M49 459l-7-34m7 23-13-9m14 1 10-17M670 462l12-48m-8 35 16-15m-12 0-10-12M404 445l-8-24m8 24 10-23"/>
+ <path d="M119 91l-8-13M130 86l-3-18M142 87l4-16M88 118l-15-4" stroke="#A6442F" stroke-width="3"/>
+</g>
 </svg>

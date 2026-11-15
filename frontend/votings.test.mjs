@@ -156,3 +156,54 @@ test('official HTML links validate identifiers and reject misleading or unsafe s
  assert.match(html,/Wyniki w PDF/);
  assert.doesNotMatch(html,/<script>|68.*40/);
 });
+
+test('history and async refresh preserve selection and focus across actual node replacement without stealing it',async()=>{
+ const original=globalThis.document;
+ const body={};globalThis.document={activeElement:body};
+ let nodes={},html='',resolve,reject;
+ const container={
+  querySelector:key=>nodes[key] || null,
+  get innerHTML(){return html;},
+  set innerHTML(value){
+   if(Object.values(nodes).includes(document.activeElement))document.activeElement=body;
+   html=value;nodes={};
+   for(const [selector,marker] of [['[data-votings-refresh]','data-votings-refresh'],['[data-voting-select]','data-voting-select']]){
+    if(!value.includes(marker))continue;
+    const selected=value.match(/<option value="([^"]+)" selected/);
+    nodes[selector]={value:selected?.[1] || '',focus(){document.activeElement=this;}};
+   }
+  }
+ };
+ let first=true;
+ try{
+  await loadBillVotings({billId:'synthetic',container,isCurrent:()=>true,fetchData:()=>{
+   if(first){first=false;return Promise.resolve(data);}
+   return new Promise((yes,no)=>{resolve=yes;reject=no;});
+  }});
+  const history=container.querySelector('[data-voting-select]');
+  history.focus();history.value='synthetic-amendment';history.onchange();
+  assert.notEqual(container.querySelector('[data-voting-select]'),history);
+  assert.equal(document.activeElement,container.querySelector('[data-voting-select]'));
+  assert.equal(container.querySelector('[data-voting-select]').value,'synthetic-amendment');
+  for(const fail of [false,true]){
+   const refresh=container.querySelector('[data-votings-refresh]');refresh.focus();
+   const pending=refresh.onclick();
+   const waiting=container.querySelector('[data-votings-refresh]');
+   assert.notEqual(waiting,refresh);assert.equal(document.activeElement,waiting);
+   assert.match(html,/aria-disabled="true"/);
+   if(fail)reject(new Error('HTTP 500'));else resolve(data);
+   await pending;
+   assert.equal(document.activeElement,container.querySelector('[data-votings-refresh]'));
+   assert.equal(container.querySelector('[data-voting-select]').value,'synthetic-amendment');
+   if(fail)assert.match(html,/Pozostawiono poprzednio pobrane dane/);
+  }
+  const changedHistory=container.querySelector('[data-voting-select]');
+  changedHistory.focus();changedHistory.onchange();
+  assert.equal(document.activeElement,container.querySelector('[data-voting-select]'),'later history changes must not inherit completed refresh focus intent');
+  container.querySelector('[data-votings-refresh]').focus();
+  const pending=container.querySelector('[data-votings-refresh]').onclick();
+  const outside={};document.activeElement=outside;
+  resolve(data);await pending;
+  assert.equal(document.activeElement,outside,'async completion must respect a deliberate focus move');
+ }finally{if(original===undefined)delete globalThis.document;else globalThis.document=original;}
+});

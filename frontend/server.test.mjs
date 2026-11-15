@@ -91,7 +91,7 @@ test('real POC seed fallback exposes both bills and the matching veto without al
       assert.ok(listed?.summary?.lead?.trim());
       const detail = await request(server, '/api/bills/' + id);
       assert.equal(detail.code, 200);
-      assert.deepEqual(detail.json(), listed);
+      assert.deepEqual(detail.json(), {...listed,demo:true});
       assert.equal(detail.headers['X-Simply-Sejm-Mode'], 'demo');
     }
     const feed = (await request(server, '/api/presidential-comments')).json();
@@ -154,11 +154,30 @@ test('paperboy SVG is allowlisted with correct MIME and supports HEAD without le
  const svg=await request(server,'/assets/paperboy.svg');assert.equal(svg.code,200);
  assert.equal(svg.headers['Content-Type'],'image/svg+xml; charset=utf-8');
  assert.equal(svg.headers['X-Content-Type-Options'],'nosniff');
- assert.match(svg.body,/<svg[^>]+viewBox="0 0 520 550"/);assert.match(svg.body,/Goniec z Wiejskiej/);
+ assert.match(svg.body,/<svg[^>]+viewBox="0 0 720 560"/);assert.match(svg.body,/Goniec z Wiejskiej/);
  assert.doesNotMatch(svg.body,/<script|<image|https?:\/\/(?!www.w3.org)/);
  const head=await request(server,'/assets/paperboy.svg','HEAD');assert.equal(head.code,200);assert.equal(head.body,undefined);assert.equal(head.headers['Content-Type'],svg.headers['Content-Type']);
  for(const url of ['/assets/','/assets/other.svg','/assets/../package.json'])assert.equal((await request(server,url)).code,404);
  const html=(await request(server,'/')).body;
  assert.match(html,/<title>Goniec z Wiejskiej/);assert.match(html,/src="\/assets\/paperboy.svg"/);
  assert.doesNotMatch(html,/Simply Sejm|simplysejm|simply<strong>/i);
+});
+
+test('rejects hostile request targets before fetch or demo fallback; Compose origin and redirects remain pinned',async()=>{
+ const original=globalThis.fetch;const calls=[];
+ globalThis.fetch=async(url,options)=>{calls.push({url:String(url),options});return new Response(null,{status:302,headers:{location:'http://other.example/api/bills'}});};
+ try{
+  const server=createServer({backend:'http://backend:8080'});
+  for(const target of ['http://evil.example/api/bills','https://evil.example/api/status','//evil.example/api/bills','///evil.example/api/bills','/\\evil.example/api/bills','/api/..\\..\\evil.example/api/bills','/%2f%2fevil.example/api/bills','/%5cevil.example/api/status','/\t/evil.example/api/bills','/api/bills#fragment']){
+   const response=await request(server,target);
+   assert.equal(response.code,400,target);assert.equal(response.json().demo,undefined);assert.equal(calls.length,0);
+  }
+  const result=await request(server,'/api/bills?source=https://example.org');
+  assert.equal(result.code,302);assert.equal(calls.length,1);
+  assert.equal(calls[0].url,'http://backend:8080/api/bills?source=https://example.org');
+  assert.equal(calls[0].options.redirect,'manual');
+  // Dot-segment normalization cannot replace the configured authority either.
+  await request(server,'/api/../api/status');
+  assert.equal(new URL(calls[1].url).origin,'http://backend:8080');
+ }finally{globalThis.fetch=original;}
 });

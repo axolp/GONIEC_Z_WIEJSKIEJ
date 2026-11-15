@@ -83,14 +83,19 @@ export function renderVoting(data, selectedId) {
     <div class="voting-sources">${sourceLink(v.sourceUrl,'Oficjalny wynik głosowania')}${sourceLink(officialVotingUrl(v),`Wynik Sejmu (HTML) — ${v.term}. kadencja, posiedzenie ${v.sitting}, głosowanie ${v.votingNumber}`)}${sourceLink(v.pdfUrl,'Wyniki w PDF')}</div>
     ${clubTable(v)}${votes.length ? `<details class="voting-members"><summary>Głosy imienne posłów (${votes.length})</summary><div class="voting-filters"><label>Szukaj nazwiska<input type="search" data-member-name placeholder="Nazwisko posła lub posłanki"></label><label>Klub w dniu głosowania<select data-member-club><option value="">Wszystkie kluby</option>${clubs.map(c => `<option value="${escape(c)}">${escape(c)}</option>`).join('')}</select></label><label>Głos<select data-member-vote><option value="">Wszystkie głosy</option>${enums.map(e => `<option value="${escape(e)}">${escape(voteLabel(e))}</option>`).join('')}</select></label></div><div data-members aria-live="polite">${renderMembers(votes)}</div></details>` : '<p>Brak zapisanych głosów imiennych</p>'}`;
 }
-export function mountVotings(container, data, {onRefresh,refreshing=false,refreshError} = {}) {
+export function mountVotings(container, data, {onRefresh,refreshing=false,refreshError,focusTarget} = {}) {
   const intro = `<p class="small">${data.demo ? 'Tryb przykładowy — backend niedostępny. ' : ''}${data.mode === 'snapshot' ? 'Zapisana migawka danych' : 'Dane pobrane z API'} · Weryfikacja: ${escape(date(data.verifiedAt))}.</p>${data.stale ? '<p class="warning">Dane mogą być nieaktualne.</p>' : ''}${data.error ? `<p class="warning">Problem z odświeżeniem danych: ${escape(data.error)}</p>` : ''}`;
-  const render = selected => {
-    container.innerHTML = intro + (onRefresh ? `<div class="voting-refresh"><button type="button" data-votings-refresh ${refreshing ? 'disabled' : ''}>${refreshing ? 'Odświeżanie wyników…' : 'Odśwież wyniki'}</button>${refreshing ? '<p role="status">Pobieranie aktualnych wyników…</p>' : ''}${refreshError ? `<p role="alert">Nie udało się odświeżyć głosowań: ${escape(refreshError)}. Pozostawiono poprzednio pobrane dane.</p>` : ''}</div>` : '') + renderVoting(data,selected);
+  const previous = container.querySelector('[data-voting-select]')?.value;
+  const focused = typeof document !== 'undefined' ? document.activeElement : null;
+  const restoreHistory = focused && focused === container.querySelector('[data-voting-select]');
+  const render = (selected, focusHistory = false, initial = false) => {
+    container.innerHTML = intro + (onRefresh ? `<div class="voting-refresh"><button type="button" data-votings-refresh aria-disabled="${refreshing}">${refreshing ? 'Odświeżanie wyników…' : 'Odśwież wyniki'}</button>${refreshing ? '<p role="status">Pobieranie aktualnych wyników…</p>' : ''}${refreshError ? `<p role="alert">Nie udało się odświeżyć głosowań: ${escape(refreshError)}. Pozostawiono poprzednio pobrane dane.</p>` : ''}</div>` : '') + renderVoting(data,selected);
     const refresh = container.querySelector('[data-votings-refresh]');
-    if (refresh) refresh.onclick = onRefresh;
+    if (refresh) refresh.onclick = () => { if (!refreshing) return onRefresh(); };
     const select = container.querySelector('[data-voting-select]');
-    if (select) select.onchange = () => render(select.value);
+    if (select) select.onchange = () => render(select.value,true);
+    if (focusHistory || (initial && restoreHistory)) select?.focus?.();
+    if (initial && focusTarget) container.querySelector(focusTarget)?.focus?.();
     const controls = ['name','club','vote'].map(key => container.querySelector(`[data-member-${key}]`));
     if (controls.every(Boolean)) {
       const update = () => {
@@ -100,23 +105,28 @@ export function mountVotings(container, data, {onRefresh,refreshing=false,refres
       controls[0].oninput=update; controls[1].onchange=update; controls[2].onchange=update;
     }
   };
-  render();
+  render(previous,false,true);
 }
 export async function loadBillVotings({billId, container, fetchData, isCurrent}) {
   let lastData = null, pending = false;
   const run = async () => {
     if (!isCurrent() || pending) return;
     pending = true;
-    if (lastData) mountVotings(container,lastData,{onRefresh:run,refreshing:true});
+    // Keep focus intent across both renders, but never reclaim focus after the user moves away.
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    const focusTarget = active && active === container.querySelector('[data-votings-refresh]') ? '[data-votings-refresh]' : null;
+    if (lastData) mountVotings(container,lastData,{onRefresh:run,refreshing:true,focusTarget});
     else container.innerHTML = '<p role="status">Wczytywanie głosowań…</p>';
+    const waitingControl = focusTarget ? container.querySelector(focusTarget) : null;
+    const retainedFocus = () => waitingControl && typeof document !== 'undefined' && document.activeElement === waitingControl ? focusTarget : null;
     try {
       const data = validateVotings(await fetchData(`/api/bills/${encodeURIComponent(billId)}/votings`),billId);
       if (!isCurrent()) return;
       lastData = data;
-      mountVotings(container,data,{onRefresh:run});
+      mountVotings(container,data,{onRefresh:run,focusTarget:retainedFocus()});
     } catch (e) {
       if (!isCurrent()) return;
-      if (lastData) mountVotings(container,lastData,{onRefresh:run,refreshError:e.message});
+      if (lastData) mountVotings(container,lastData,{onRefresh:run,refreshError:e.message,focusTarget:retainedFocus()});
       else {
         container.innerHTML = `<p role="alert">Nie udało się pobrać głosowań: ${escape(e.message)}</p><button type="button" data-votings-retry>Spróbuj ponownie pobrać głosowania</button>`;
         const retry = container.querySelector('[data-votings-retry]');

@@ -35,7 +35,9 @@ export function renderPresidentialFeed(feed, bills = []) {
 
 export function renderRelatedComments(feed, bill) {
   if (!hasBillSummary(bill)) return '';
+  const limitation = '<p class="small">To ręcznie zweryfikowana migawka, nie pełny rejestr stanowisk. Synchronizacja projektów jej nie aktualizuje. Brak wpisu nie oznacza braku stanowiska.</p>';
+  if (!feed || feed.error) return `<section class="analysis president-related"><h3>Stanowisko prezydenta</h3><p role="alert">Nie udało się pobrać stanowisk Prezydenta. Nie można ustalić, czy zapisano stanowisko dla tego projektu.</p>${limitation}</section>`;
   const comments = relatedComments(feed, bill.id);
-  if (!comments.length) return '<section class="analysis president-related"><h3>Stanowisko prezydenta</h3><p>Brak informacji o stanowisku prezydenta</p></section>';
-  return `<section class="analysis president-related"><h3>Stanowisko prezydenta</h3><p class="small">Powiązanie potwierdzone numerem druku w źródle. Weryfikacja: ${escape(displayDate(feed.verifiedAt))}.</p>${comments.map(card).join('')}</section>`;
+  if (!comments.length) return '<section class="analysis president-related"><h3>Stanowisko prezydenta</h3><p>Brak informacji o stanowisku prezydenta</p>' + limitation + '</section>';
+  return `<section class="analysis president-related"><h3>Stanowisko prezydenta</h3><p class="small">Powiązanie potwierdzone numerem druku w źródle. Weryfikacja: ${escape(displayDate(feed.verifiedAt))}.</p>${limitation}${comments.map(card).join('')}</section>`;
 }
